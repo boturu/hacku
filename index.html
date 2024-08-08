@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Game</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #f0f0f0;
+        }
+        canvas {
+            display: block;
+            margin: 0 auto;
+        }
+    </style>
+    <!-- Include p5.js library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.js"></script>
+</head>
+<body>
+    <script>
+        let player;
+        let obstacles = [];
+        let score = 0;
+        let obstacleSpeed = 2;
+        let obstacleInterval = 60; // Number of frames between new obstacles
+        let framesUntilNextObstacle = obstacleInterval;
+
+        function setup() {
+            createCanvas(windowWidth, windowHeight);
+            player = new Player(width / 2, height - 60);
+        }
+
+        function draw() {
+            background(200);
+
+            // Update and display player
+            player.update();
+            player.display();
+
+            // Update and display obstacles
+            if (framesUntilNextObstacle <= 0) {
+                obstacles.push(new Obstacle(random(width), -30, random(30, 50), random(30, 50)));
+                framesUntilNextObstacle = obstacleInterval; // Reset the interval
+            }
+            framesUntilNextObstacle--;
+
+            for (let i = obstacles.length - 1; i >= 0; i--) {
+                let obstacle = obstacles[i];
+                obstacle.update();
+                obstacle.display();
+                if (player.collidesWith(obstacle)) {
+                    gameOver();
+                }
+                if (obstacle.offScreen()) {
+                    obstacles.splice(i, 1); // Remove off-screen obstacles
+                    score++;
+                }
+            }
+
+            // Display score
+            fill(0);
+            textSize(24);
+            text(`Score: ${score}`, 10, 30);
+        }
+
+        function keyPressed() {
+            if (keyCode === LEFT_ARROW) {
+                player.move(-10, 0);
+            } else if (keyCode === RIGHT_ARROW) {
+                player.move(10, 0);
+            } else if (keyCode === UP_ARROW) {
+                player.move(0, -10);
+            } else if (keyCode === DOWN_ARROW) {
+                player.move(0, 10);
+            }
+        }
+
+        function windowResized() {
+            resizeCanvas(windowWidth, windowHeight);
+        }
+
+        function gameOver() {
+            noLoop(); // Stop the draw loop
+            fill(0);
+            textSize(48);
+            textAlign(CENTER, CENTER);
+            text("Game Over!", width / 2, height / 2);
+        }
+
+        class Player {
+            constructor(x, y) {
+                this.x = x;
+                this.y = y;
+                this.size = 50;
+            }
+
+            update() {
+                // Keep player within canvas boundaries
+                this.x = constrain(this.x, 0, width - this.size);
+                this.y = constrain(this.y, 0, height - this.size);
+            }
+
+            move(x, y) {
+                this.x += x;
+                this.y += y;
+            }
+
+            display() {
+                fill(255, 0, 0);
+                rect(this.x, this.y, this.size, this.size);
+            }
+
+            collidesWith(obstacle) {
+                return (
+                    this.x < obstacle.x + obstacle.w &&
+                    this.x + this.size > obstacle.x &&
+                    this.y < obstacle.y + obstacle.h &&
+                    this.y + this.size > obstacle.y
+                );
+            }
+        }
+
+        class Obstacle {
+            constructor(x, y, w, h) {
+                this.x = x;
+                this.y = y;
+                this.w = w;
+                this.h = h;
+                this.speed = obstacleSpeed;
+            }
+
+            update() {
+                this.y += this.speed;
+            }
+
+            display() {
+                fill(0, 0, 255);
+                rect(this.x, this.y, this.w, this.h);
+            }
+
+            offScreen() {
+                return this.y > height;
+            }
+        }
+    </script>
+</body>
+</html>
